@@ -1,0 +1,405 @@
+			1).
+
+def water_jug_dfs(jug1, jug2, target):
+    stack = [(0, 0, "Start")]
+    visited = set()
+    
+    while stack:
+        a, b, action = stack.pop()
+        print(f"Action: {action} -> Jug1: {a}L, Jug2: {b}L")
+
+        if a == target or b == target:
+            print(f" Solution found: ({a}, {b})")
+            return True
+
+        if (a, b) in visited:
+            continue
+        
+        visited.add((a, b))
+
+        stack.extend([
+            (jug1, b, "Filled Jug1"),
+            (a, jug2, "Filled Jug2"),
+            (0, b, "Emptied Jug1"),
+            (a, 0, "Emptied Jug2"),
+            (a - min(a, jug2 - b), b + min(a, jug2 - b), "Poured Jug1 → Jug2"),
+            (a + min(b, jug1 - a), b - min(b, jug1 - a), "Poured Jug2 → Jug1")
+        ])
+
+    print(" No solution found.")
+    return False
+
+# Example usage
+water_jug_dfs(5,3, 1)
+
+
+
+			2).
+
+from collections import deque
+
+def is_valid(lm, lc, rm, rc):
+    return all(x >= 0 for x in [lm, lc, rm, rc]) and \
+           (lm == 0 or lm >= lc) and (rm == 0 or rm >= rc)
+
+def successors(s):
+    lm, lc, b, rm, rc = s
+    moves = [(1,0), (2,0), (0,1), (0,2), (1,1)]
+    res = []
+    for m, c in moves:
+        if b:
+            ns = (lm - m, lc - c, 0, rm + m, rc + c)
+        else:
+            ns = (lm + m, lc + c, 1, rm - m, rc - c)
+        if is_valid(*ns[:2], *ns[3:]):
+            res.append(ns)
+    return res
+
+def bfs(start, goal):
+    q, seen = deque([(start, [start])]), set()
+    while q:
+        s, p = q.popleft()
+        if s == goal: return p
+        if s in seen: continue
+        seen.add(s)
+        q.extend((n, p + [n]) for n in successors(s) if n not in seen)
+    return None
+
+def solve():
+    path = bfs((3,3,1,0,0), (0,0,0,3,3))
+    print(*path, sep='\n') if path else print("No solution found.")
+
+solve()
+
+
+
+			3).A*
+
+def a_star(graph, heuristics, start, goal):
+    open_list = [(start, [start], 0)] 
+    
+    while open_list:
+        open_list.sort(key=lambda x: x[2] + heuristics[x[0]]) 
+        current, path, cost = open_list.pop(0)
+
+        if current == goal:
+            return path
+
+        for neighbor, weight in graph.get(current, []):
+            open_list.append((neighbor, path + [neighbor], cost + weight))
+
+    return None
+
+graph = {
+    'A': [('B', 1), ('C', 4)],
+    'B': [('C', 2), ('D', 3)],
+    'C': [('E', 5)],
+    'D': [('F', 2),('G',4)],
+    'E': [('G', 3)], 'F': [('G',1)]
+}
+heuristics = {
+    'A': 5, 'B': 6, 'C': 4,
+    'D': 3, 'E': 3, 'F': 1, 'G':0
+}
+result = a_star(graph, heuristics, 'A', 'G')
+print("A* Path:", result)
+
+
+
+
+
+		3). AO*
+
+def ao_star(node, graph, heuristics, solution):
+    if not graph.get(node):
+        return heuristics[node]
+
+    min_cost = float('inf')
+    best_option = None
+
+    for option in graph[node]:  
+        cost = sum(1+heuristics[n] for n in option)
+        if cost < min_cost:
+            min_cost = cost
+            best_option = option
+
+    heuristics[node] = min_cost
+    solution[node] = best_option
+
+    for child in best_option:
+        ao_star(child, graph, heuristics, solution)
+
+    return heuristics[node]
+
+def print_solution(node, solution):
+    if node not in solution:
+        print(node, end=" ")
+        return
+    print(node, "->", end=" ")
+    for child in solution[node]:
+        print_solution(child, solution)
+
+
+graph = {
+    'A': [['B', 'C'], ['D']],
+    'B': [['E']],
+    'C': [['F']],
+    'D': [['G', 'H']],
+    'E': [], 'F': [], 'G': [], 'H': []
+}
+
+heuristics = {
+     'B': 5, 'C': 4, 'D': 7,
+    'E': 3, 'F': 2, 'G': 1, 'H': 3
+}
+
+solution = {}
+ao_star('A', graph, heuristics, solution)
+
+print("AO* Solution Path:")
+print_solution('A', solution)
+
+
+				4).
+
+def print_board(board):
+    for row in board:
+        print(" ".join("Q" if cell else "." for cell in row))
+    print()
+
+def is_safe(board, row, col):
+    for i in range(row):
+        if board[i][col] or \
+           (col - row + i >= 0 and board[i][col - row + i]) or \
+           (col + row - i < 8 and board[i][col + row - i]):
+            return False
+    return True
+
+def solve(board, row=0):
+    if row == 8:
+        print_board(board)
+        return True
+
+    for col in range(8):
+        if is_safe(board, row, col):
+            board[row][col] = 1
+            if solve(board, row + 1):
+                return True
+            board[row][col] = 0
+    return False
+
+solve([[0]*8 for _ in range(8)])
+
+			
+
+			5).
+
+def tsp_nearest_neighbor(dist_matrix):
+    n = len(dist_matrix)
+    visited = [False] * n
+    path = [0]  
+    visited[0] = True
+    total_distance = 0
+    current = 0
+
+    for _ in range(n - 1):
+        nearest = None
+        nearest_dist = float('inf')
+        for i in range(n):
+            if not visited[i] and dist_matrix[current][i] < nearest_dist:
+                nearest = i
+                nearest_dist = dist_matrix[current][i]
+        path.append(nearest)
+        visited[nearest] = True
+        total_distance += nearest_dist
+        current = nearest
+
+    
+    total_distance += dist_matrix[current][0]
+    path.append(0)
+
+    return path, total_distance
+
+
+distance_matrix = [
+    [0, 20, 40, 22],
+    [20, 0, 13, 30],
+    [40, 13, 0, 12],
+    [22, 30, 12, 0]
+]
+
+
+path, cost = tsp_nearest_neighbor(distance_matrix)
+
+print("Path:", path)
+print("Total distance:", cost)
+
+
+
+			6).
+
+rules = [
+    (["cloudy"], "might_rain"),
+    (["might_rain"], "take_umbrella")
+]
+
+facts = {"cloudy"}
+
+
+goal = "take_umbrella"
+
+
+def forward_chaining(rules, facts, goal):
+    inferred = set()
+    while True:
+        new_inference = False
+        for conditions, conclusion in rules:
+            if conclusion not in facts and all(cond in facts for cond in conditions):
+                facts.add(conclusion)
+                inferred.add(conclusion)
+                new_inference = True
+                print(f"Inferred: {conclusion}")
+                if conclusion == goal:
+                    return True
+        if not new_inference:
+            break
+    return goal in facts
+
+
+result = forward_chaining(rules, facts, goal)
+print("Goal reached:", result)
+
+
+
+				7).
+
+rule = [["~Man(x)", "Mortal(x)"]]
+
+
+facts = ["Man(Socrates)"]
+
+
+goal = "Mortal(Socrates)"
+
+
+negated_goal = "~Mortal(Socrates)"
+
+
+clauses = rule[0] + [negated_goal] + facts
+
+
+def resolve(clause1, clause2):
+    for c1 in clause1:
+        for c2 in clause2:
+            if c1 == negate(c2):
+                new_clause = list(set(clause1 + clause2))
+                new_clause.remove(c1)
+                new_clause.remove(c2)
+                return new_clause
+    return None
+
+def negate(literal):
+    if literal.startswith("~"):
+        return literal[1:]
+    else:
+        return "~" + literal
+
+
+def unify(clause):
+    unified = []
+    for lit in clause:
+        unified.append(lit.replace("x", "Socrates"))
+    return unified
+
+
+rule_clause = unify(rule[0])
+goal_clause = [negated_goal]
+fact_clause = facts
+
+
+step1 = resolve(rule_clause, fact_clause)
+print("Step 1 Resolution:", step1)
+
+step2 = resolve(step1, goal_clause)
+print("Step 2 Resolution (goal):", step2)
+
+if step2 == []:
+    print("\n Goal Proven by Resolution!")
+else:
+    print("\nGoal Not Proven")
+
+
+
+			8).
+
+import turtle
+import time
+import random
+
+screen = turtle.Screen()
+screen.title("Snake Game")
+screen.bgcolor("black")
+screen.setup(width=600, height=600)
+screen.tracer(0)
+
+snake = turtle.Turtle()
+snake.shape("square")
+snake.color("green")
+snake.penup()
+snake.goto(0, 0)
+snake.direction = "stop"
+
+food = turtle.Turtle()
+food.shape("circle")
+food.color("red")
+food.penup()
+food.goto(random.randint(-280, 280), random.randint(-280, 280))
+
+score = 0
+delay = 0.1
+
+def goup():
+    if snake.direction != "down":
+        snake.direction = "up"
+
+def godown():
+    if snake.direction != "up":
+        snake.direction = "down"
+
+def goleft():
+    if snake.direction != "right":
+        snake.direction = "left"
+
+def goright():
+    if snake.direction != "left":
+        snake.direction = "right"
+
+def move():
+    if snake.direction == "up":
+        snake.sety(snake.ycor() + 20)
+    elif snake.direction == "down":
+        snake.sety(snake.ycor() - 20)
+    elif snake.direction == "left":
+        snake.setx(snake.xcor() - 20)
+    elif snake.direction == "right":
+        snake.setx(snake.xcor() + 20)
+
+screen.listen()
+screen.onkey(goup, "Up")
+screen.onkey(godown, "Down")
+screen.onkey(goleft, "Left")
+screen.onkey(goright, "Right")
+
+while True:
+    screen.update()
+    move()
+
+    if snake.distance(food) < 15:
+        food.goto(random.randint(-280, 280), random.randint(-280, 280))
+        score += 1
+        delay -= 0.005
+
+    time.sleep(delay)
+
+screen.mainloop()
+
