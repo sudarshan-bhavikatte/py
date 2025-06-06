@@ -1,0 +1,331 @@
+1.
+use ProgrammingBooks
+db.createCollection("BookDetails")
+
+db.BookDetails.insertOne({
+  _id: 1,
+  title: "Clean Code",
+  author: "Robert C. Martin",
+  category: "Software Development",
+  year: 2008
+})
+
+db.BookDetails.insertMany([
+  {_id: 2, title: "Clean Code", author: "Robert C. Martin", category: "Software Development", year: 2008},
+  {_id: 3, title: "JavaScript: The Good Parts", author: "Douglas Crockford", category: "JavaScript", year: 2008},
+  {_id: 4, title: "Design Patterns", author: "Erich Gamma", category: "Software Design", year: 1994},
+  {_id: 5, title: "Introduction to Algorithms", author: "Thomas H. Cormen", category: "Algorithms", year: 2009},
+  {_id: 6, title: "Python Crash Course", author: "Eric Matthes", category: "Python", year: 2015}
+])
+
+db.BookDetails.find()
+db.BookDetails.find().pretty()
+db.BookDetails.find({ year: 2008 }).pretty()
+db.BookDetails.find({ year: { $eq: 2008 } }).pretty()
+db.BookDetails.find({ $where: "this.year==2008" }).pretty()
+
+db.BookDetails.find({
+  $and: [
+    { category: "Software Development" },
+    { year: 2008 }
+  ]
+}).pretty()
+
+db.BookDetails.find({
+  $or: [
+    { category: "JavaScript" },
+    { year: 2015 }
+  ]
+}).pretty()
+
+db.BookDetails.find({ category: { $in: ["javascript", "Software Development"] } }).pretty()
+
+
+
+2.
+db.BookDetails.find({}, { category: 1, title: 1, price: 1 })
+db.BookDetails.find({}, { category: 1, title: 1, price: 1, _id: 0 })
+db.BookDetails.find({ title: 'Clean Code' }, { category: 1, title: 1, price: 1, _id: 0 })
+db.BookDetails.find({ title: 'Clean Code' }, { category: 0, _id: 0 })
+
+db.BookDetails.countDocuments()
+db.BookDetails.find().limit(5)
+db.BookDetails.find({}, { category: 1, title: 1, price: 1, _id: 0 }).limit(5)
+db.BookDetails.find().skip(2)
+db.BookDetails.find().skip(2).sort('category')
+db.BookDetails.find().sort().limit(4)
+db.BookDetails.find({}, { title: 1, author: 1, year: 1, _id: 0 }).sort().limit(4)
+
+
+3.
+use companyDB
+db.Employees.insertMany([
+  { name: "Alice", age: 30, department: "HR", salary: 50000, joinDate: new Date("2015-01-15") },
+  { name: "Bob", age: 24, department: "Engineering", salary: 70000, joinDate: new Date("2019-03-10") },
+  { name: "Charlie", age: 29, department: "Engineering", salary: 75000, joinDate: new Date("2017-06-23") },
+  { name: "David", age: 35, department: "Marketing", salary: 60000, joinDate: new Date("2014-11-01") },
+  { name: "Eve", age: 28, department: "Finance", salary: 80000, joinDate: new Date("2018-08-19") }
+])
+
+db.Employees.find({ department: { $eq: "Engineering" } }).pretty()
+db.Employees.find({ department: { $ne: "HR" } }).pretty()
+db.Employees.find({ age: { $gt: 30 } }).pretty()
+db.Employees.find({ salary: { $lt: 70000 } }).pretty()
+db.Employees.find({ joinDate: { $gte: new Date("2018-01-01") } }).pretty()
+db.Employees.find({ age: { $lte: 28 } }).pretty()
+
+db.Employees.find({ $and: [ { department: "Engineering" }, { salary: { $gt: 70000 } } ] }).pretty()
+db.Employees.find({ $or: [ { department: "HR" }, { salary: { $lt: 60000 } } ] }).pretty()
+db.Employees.find({ department: { $not: { $eq: "Engineering" } } }).pretty()
+db.Employees.find({ $nor: [ { department: "HR" }, { salary: { $gt: 75000 } } ] }).pretty()
+
+
+4.
+use retailDB
+db.createCollection("Products")
+
+db.Products.insertMany([
+  {
+    name: "Laptop",
+    brand: "BrandA",
+    features: [
+      { name: "Processor", value: "Intel i7" },
+      { name: "RAM", value: "16GB" },
+      { name: "Storage", value: "512GB SSD" }
+    ],
+    reviews: [
+      { user: "Alice", rating: 5, comment: "Excellent!" },
+      { user: "Bob", rating: 4, comment: "Very good" },
+      { user: "Charlie", rating: 3, comment: "Average" }
+    ]
+  },
+  {
+    name: "Smartphone",
+    brand: "BrandB",
+    features: [
+      { name: "Processor", value: "Snapdragon 888" },
+      { name: "RAM", value: "8GB" },
+      { name: "Storage", value: "256GB" }
+    ],
+    reviews: [
+      { user: "Dave", rating: 4, comment: "Good phone" },
+      { user: "Eve", rating: 2, comment: "Not satisfied" }
+    ]
+  }
+])
+
+db.Products.find({ name: "Laptop", "reviews.user": "Alice" }, { "reviews.$": 1 }).pretty()
+
+db.Products.find(
+  { name: "Laptop" },
+  { reviews: { $elemMatch: { rating: { $gt: 4 } } } }
+).pretty()
+
+db.Products.find(
+  { name: "Smartphone" },
+  { reviews: { $slice: 1 } }
+).pretty()
+
+db.Products.find(
+  { name: "Laptop" },
+  {
+    name: 1,
+    features: { $slice: 2 },
+    reviews: { $elemMatch: { rating: 5 } }
+  }
+).pretty()
+
+
+5.
+use salesDB
+db.createCollection("Sales")
+
+db.Sales.insertMany([
+  { date: new Date("2024-01-01"), product: "Laptop", price: 1200, quantity: 1, customer: "Amar" },
+  { date: new Date("2024-01-02"), product: "Laptop", price: 1200, quantity: 2, customer: "Babu" },
+  { date: new Date("2024-01-03"), product: "Mouse", price: 25, quantity: 5, customer: "Chandra" },
+  { date: new Date("2024-01-04"), product: "Keyboard", price: 45, quantity: 3, customer: "Amar" },
+  { date: new Date("2024-01-05"), product: "Monitor", price: 300, quantity: 1, customer: "Babu" },
+  { date: new Date("2024-01-06"), product: "Laptop", price: 1200, quantity: 1, customer: "Deva" }
+])
+
+db.Sales.aggregate([{ $group: { _id: "$product", averagePrice: { $avg: "$price" } } }]).pretty()
+db.Sales.aggregate([{ $group: { _id: "$product", minPrice: { $min: "$price" } } }]).pretty()
+db.Sales.aggregate([{ $group: { _id: "$product", maxPrice: { $max: "$price" } } }]).pretty()
+db.Sales.aggregate([{ $group: { _id: "$customer", products: { $push: "$product" } } }]).pretty()
+db.Sales.aggregate([{ $group: { _id: "$customer", uniqueProducts: { $addToSet: "$product" } } }]).pretty()
+
+db.Sales.aggregate([
+  {
+    $group: {
+      _id: "$product",
+      totalQuantity: { $sum: "$quantity" },
+      totalSales: { $sum: { $multiply: ["$price", "$quantity"] } },
+      customers: { $addToSet: "$customer" }
+    }
+  }
+]).pretty()
+
+
+6.
+use restaurantDB
+db.createCollection("restaurants")
+
+db.restaurants.insertMany([
+  {
+    name: "Biryani House",
+    cuisine: "Indian",
+    location: "Jayanagar",
+    reviews: [
+      { user: "Aarav", rating: 5, comment: "Amazing biryani!" },
+      { user: "Bhavana", rating: 4, comment: "Great place!" }
+    ]
+  },
+  {
+    name: "Burger Joint",
+    cuisine: "American",
+    location: "Koramangala",
+    reviews: [
+      { user: "Chirag", rating: 3, comment: "Average burger" },
+      { user: "Devika", rating: 4, comment: "Good value" }
+    ]
+  },
+  {
+    name: "Pasta House",
+    cuisine: "Italian",
+    location: "Rajajinagar",
+    reviews: [
+      { user: "Esha", rating: 5, comment: "Delicious pasta!" },
+      { user: "Farhan", rating: 4, comment: "Nice ambiance" }
+    ]
+  },
+  {
+    name: "Curry Palace",
+    cuisine: "Indian",
+    location: "Jayanagar",
+    reviews: [
+      { user: "Gaurav", rating: 4, comment: "Spicy and tasty!" },
+      { user: "Harini", rating: 5, comment: "Best curry in town!" }
+    ]
+  }
+])
+
+db.restaurants.aggregate([
+  { $match: { location: "Jayanagar" } },
+  { $unwind: "$reviews" },
+  { $group: {
+      _id: "$name",
+      averageRating: { $avg: "$reviews.rating" },
+      totalReviews: { $sum: 1 }
+  }},
+  { $sort: { averageRating: -1 } },
+  { $project: {
+      _id: 0,
+      restaurant: "$_id",
+      averageRating: 1,
+      totalReviews: 1
+  }},
+  { $skip: 1 }
+]).pretty()
+
+
+7.
+use vacationRentals
+db.createCollection("listingsAndReviews")
+
+db.listingsAndReviews.insertMany([
+  {
+    listing_url: "http://example.com/1",
+    name: "Beautiful Apartment",
+    address: { city: "Metropolis" },
+    host: { name: "Alice", picture_url: "http://example.com/host.jpg" }
+  },
+  {
+    listing_url: "http://example.com/2",
+    name: "Cozy Cottage",
+    address: { city: "Smallville" },
+    host: { name: "Bob", picture_url: "" }
+  }
+])
+
+db.listingsAndReviews.find(
+  { "host.picture_url": { $exists: true, $ne: "" } },
+  { listing_url: 1, name: 1, address: 1, "host.picture_url": 1 }
+).pretty()
+
+use ecommerce
+db.createCollection("products")
+
+db.products.insertMany([
+  {
+    product_id: 1,
+    name: "Laptop",
+    category: "Electronics",
+    price: 1200,
+    reviews: [
+      { user: "Alice", rating: 5, comment: "Excellent!" },
+      { user: "Bob", rating: 4, comment: "Very good" }
+    ]
+  }
+])
+
+db.products.aggregate([
+  { $unwind: "$reviews" },
+  { $group: {
+      _id: "$name",
+      totalReviews: { $sum: 1 },
+      averageRating: { $avg: "$reviews.rating" },
+      comments: { $push: "$reviews.comment" }
+  }},
+  { $project: {
+      _id: 0,
+      product: "$_id",
+      totalReviews: 1,
+      averageRating: 1,
+      comments: 1
+  }}
+]).pretty()
+
+
+8.
+db.employees.insertMany([
+  { name: "Alice", email: "alice@example.com", dept: "HR", skills: ["communication", "leadership"] },
+  { name: "Bob", email: "bob@example.com", dept: "Engineering", skills: ["JavaScript", "MongoDB"] },
+  { name: "Charlie", dept: "HR", skills: ["recruitment"] }
+])
+
+db.employees.createIndex({ email: 1 }, { unique: true })
+db.employees.createIndex({ email: 1 }, { sparse: true })
+db.employees.createIndex({ dept: 1, name: 1 })
+db.employees.createIndex({ skills: 1 })
+db.employees.getIndexes()
+
+
+9.
+use kannadaMovies
+db.createCollection("catalog")
+
+db.catalog.createIndex({ name: "text", genre: "text" })
+
+db.catalog.find({ $text: { $search: "maga" } })
+db.catalog.find({ $text: { $search: "\"tappida Maga\"" } })
+db.catalog.find({ $text: { $search: "crime romance -action" }, year: 2021 })
+db.catalog.find({ $text: { $search: "maga -\"da maga\"" } })
+
+db.catalog.aggregate([
+  { $match: { year: 2017 } },
+  { $group: { _id: "$genre", avgRating: { $avg: "$rating" } } },
+  { $sort: { avgRating: -1 } },
+  { $project: { year: "$year", avgRating: 1, genre: 1 } },
+  { $limit: 5 }
+]).toArray()
+
+db.catalog.aggregate([
+  { $match: { year: 2017 } },
+  { $group: { _id: "$genre", avgRating: { $avg: "$rating" } } },
+  { $sort: { avgRating: -1 } },
+  { $project: { year: "$year", avgRating: 1, genre: 1 } },
+  { $limit: 7 },
+  { $skip: 2 }
+]).toArray()
+
